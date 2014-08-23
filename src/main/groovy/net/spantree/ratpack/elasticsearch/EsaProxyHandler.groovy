@@ -17,6 +17,7 @@
 package net.spantree.ratpack.elasticsearch
 
 import groovy.json.JsonSlurper
+import net.spantree.esa.EsaSearchResponse
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory
@@ -43,8 +44,8 @@ class EsaProxyHandler extends GroovyHandler {
                     blocking {
                         Map node = parse Map
                         elasticsearchQuery.send(context.pathTokens.indexName, node)
-                    } then { resp ->
-                        context.render json(new JsonSlurper().parseText(resp.toString()))
+                    } then { EsaSearchResponse resp ->
+                        context.render json(new JsonSlurper().parseText(resp.body.toString()))
                     }
                 }
             }

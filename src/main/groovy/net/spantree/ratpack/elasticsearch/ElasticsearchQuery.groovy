@@ -16,18 +16,21 @@
 
 package net.spantree.ratpack.elasticsearch
 
-import org.elasticsearch.action.search.SearchResponse
+import net.spantree.esa.EsaPermissions
+import net.spantree.esa.EsaSearchResponse
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory
 
 import javax.inject.Inject
 
 class ElasticsearchQuery {
-    ElasticsearchClientService elasticsearchClientService
+    private final ElasticsearchClientService elasticsearchClientService
+    private final EsaPermissions esaPermissions
 
     @Inject
-    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService) {
+    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService, EsaPermissions esaPermissions) {
         this.elasticsearchClientService = elasticsearchClientService
+        this.esaPermissions = esaPermissions
     }
 
     private XContentBuilder addField( fieldName,  value, XContentBuilder doc) {
@@ -53,8 +56,27 @@ class ElasticsearchQuery {
         doc
     }
 
-    SearchResponse send(String indexName, Map params) {
-        elasticsearchClientService.query(indexName, toXContentBuilder(params))
+    EsaSearchResponse send(String indexName, Map params) {
+        EsaSearchResponse searchResponse = new EsaSearchResponse()
+        if(defaultAccessLevel(indexName)) {
+            searchResponse.unauthorized = Boolean.FALSE
+            searchResponse.body = elasticsearchClientService.query(indexName, toXContentBuilder(params))
+        } else {
+            searchResponse.unauthorized = Boolean.TRUE
+        }
+        searchResponse
+    }
+
+    Boolean defaultAccessLevel(String indexName) {
+        Boolean accessLevel = Boolean.FALSE
+        switch(esaPermissions.base?.indices[indexName]["access"]) {
+            case "allow":
+                accessLevel = Boolean.TRUE
+                break
+            default:
+                accessLevel = Boolean.FALSE
+        }
+        accessLevel
     }
 
 }

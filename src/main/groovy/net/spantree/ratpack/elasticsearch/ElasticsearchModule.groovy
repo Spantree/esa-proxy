@@ -21,7 +21,9 @@ package net.spantree.ratpack.elasticsearch
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Scopes
-import com.google.inject.Singleton
+import net.spantree.esa.EsaPermissions
+
+import javax.inject.Singleton
 
 /**
  * An Elasticsearch module that provides a way to create an index and populate types in that index.
@@ -50,5 +52,19 @@ class ElasticsearchModule extends AbstractModule {
     @Singleton
     ElasticsearchClientService provideElasticsearchClientService() {
         new ElasticsearchClientServiceImpl(new ElasticsearchConfig(this.cfg))
+    }
+
+    @Provides
+    @Singleton
+    EsaPermissions provideEsaPermissions() {
+        EsaPermissions esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow"
+                        ]
+                ]
+        ]
+        esaPermissions
     }
 }
