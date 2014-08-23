@@ -16,9 +16,6 @@
 
 package net.spantree.ratpack.elasticsearch
 
-import net.spantree.esa.UserDAO
-import net.spantree.esa.UserEntity
-import net.spantree.esa.persistence.MongoClient
 import ratpack.groovy.test.LocalScriptApplicationUnderTest
 import ratpack.groovy.test.TestHttpClient
 import ratpack.groovy.test.TestHttpClients
@@ -26,25 +23,13 @@ import ratpack.test.ApplicationUnderTest
 import spock.lang.Specification
 
 class EsaProxyHandlerSpec extends Specification {
-    UserDAO userDAO
     ApplicationUnderTest aut = new LocalScriptApplicationUnderTest('other.remoteControl.enabled': 'true')
     @Delegate TestHttpClient client = TestHttpClients.testHttpClient(aut)
 
-    def setup() {
-        userDAO = new UserDAO(new MongoClient(new File("src/ratpack/config", "Config.groovy")))
-    }
-
-    def cleanup() {
-        userDAO.dropDatabase()
-    }
-
     def "lists ten items by default"() {
-        given:
-        UserEntity user = userDAO.create("{'name': 'Kermit The Frog'}")
         when:
         request.contentType("application/json")
             .body([
-                apiToken: user.apiToken,
                 fields: [
                     returned: ['name', 'description'],
                     searched: ['name', 'description']
@@ -79,40 +64,6 @@ class EsaProxyHandlerSpec extends Specification {
             getMap("aggregations").directed_by.buckets.size() > 0
             getMap("aggregations").genre.buckets.size() > 0
         }
-    }
-
-    def "returns 401 if request is made without an api token"() {
-        when:
-        request.contentType("application/json")
-                .body([
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
-                ],
-                aggs: [
-                        genre: [
-                                terms: [ field: 'genre.facet' ]
-                        ],
-                        directed_by: [
-                                terms: [ field: 'directed_by.facet' ]
-                        ]
-                ],
-                highlight: [
-                        pre_tags: ['<mark>'],
-                        post_tags: ['</mark>'],
-                        fields: [
-                                name: [ number_of_fragments: 0 ],
-                                description: [ number_of_fragments: 0 ]
-                        ]
-                ]
-        ])
-        post("freebase/_search")
-
-        then:
-        with(response.jsonPath()){
-            getString("error") == "Unauthorized request!"
-        }
-        response.statusCode == 401
     }
 
 }

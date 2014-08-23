@@ -1,6 +1,3 @@
-import net.spantree.esa.UserDAOModule
-import net.spantree.ratpack.UserAccountDeleteHandler
-import net.spantree.ratpack.UserAccountsHandler
 import net.spantree.ratpack.elasticsearch.EsaProxyHandler
 import net.spantree.ratpack.elasticsearch.ElasticsearchModule
 import ratpack.codahale.metrics.CodaHaleMetricsModule
@@ -19,7 +16,6 @@ ratpack {
         add new JacksonModule()
         add new MarkupTemplatingModule()
         add new CodaHaleMetricsModule().jvmMetrics().jmx().websocket().healthChecks()
-        add new UserDAOModule(new File(configDir, "Config.groovy"))
         add new ElasticsearchModule(new File(configDir, "EsSampleConfig.groovy"))
     }
 
@@ -29,8 +25,6 @@ ratpack {
         }
 
         handler(":indexName/_search", registry.get(EsaProxyHandler))
-        handler("esa/user_accounts", registry.get(UserAccountsHandler))
-        handler("esa/user_accounts/:id", registry.get(UserAccountDeleteHandler))
 
         prefix("health") {
             get("health-check/:name?", new HealthCheckHandler())

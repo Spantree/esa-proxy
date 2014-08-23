@@ -16,8 +16,6 @@
 
 package net.spantree.ratpack.elasticsearch
 
-import net.spantree.esa.UserDAO
-import net.spantree.esa.UserEntity
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory
@@ -26,12 +24,10 @@ import javax.inject.Inject
 
 class ElasticsearchQuery {
     ElasticsearchClientService elasticsearchClientService
-    UserDAO userDAO
 
     @Inject
-    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService, UserDAO userDAO) {
+    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService) {
         this.elasticsearchClientService = elasticsearchClientService
-        this.userDAO = userDAO
     }
 
     private XContentBuilder addField( fieldName,  value, XContentBuilder doc) {
@@ -57,16 +53,8 @@ class ElasticsearchQuery {
         doc
     }
 
-    def send(String indexName, Map params) {
-        boolean unauthorized = true
-        def body
-        UserEntity userEntity = userDAO.findByApiToken(params.apiToken.toString())
-        if(userEntity.id) {
-            unauthorized = false
-            SearchResponse response = elasticsearchClientService.query(indexName, toXContentBuilder(params))
-            body = response
-        }
-        [unauthorized: unauthorized, body: body]
+    SearchResponse send(String indexName, Map params) {
+        elasticsearchClientService.query(indexName, toXContentBuilder(params))
     }
 
 }

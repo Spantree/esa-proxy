@@ -16,61 +16,53 @@
 
 package net.spantree.ratpack.elasticsearch
 
-import net.spantree.esa.UserDAO
-import net.spantree.esa.UserEntity
-import net.spantree.esa.persistence.MongoClient
 import org.elasticsearch.action.search.SearchResponse
 import spock.lang.Specification
 
 class ElasticsearchQuerySpec extends Specification {
     ElasticsearchQuery elasticsearchQuery
-    UserDAO userDAO
 
     def setup() {
-        def elasticsearchClientService = Stub(ElasticsearchClientService) {
-            query() >> new SearchResponse()
-        }
-        userDAO = new UserDAO(new MongoClient(new File("src/ratpack/config", "Config.groovy")))
-        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService, userDAO)
+        File configFile = new File("src/ratpack/config", "EsSampleConfig.groovy")
+        def config = new ElasticsearchConfig(configFile)
+        ElasticsearchClientService elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
+        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService)
     }
 
-    def "should not be authorized to make a query without an apiToken"() {
+    def "should proxy request to elasticsearch"() {
         given:
-        def params = [:]
+        def params = [
+                fields: [
+                        returned: ['name', 'description'],
+                        searched: ['name', 'description']
+                ],
+                aggs: [
+                        genre: [
+                                terms: [ field: 'genre.facet' ]
+                        ],
+                        directed_by: [
+                                terms: [ field: 'directed_by.facet' ]
+                        ]
+                ],
+                highlight: [
+                        pre_tags: ['<mark>'],
+                        post_tags: ['</mark>'],
+                        fields: [
+                                name: [ number_of_fragments: 0 ],
+                                description: [ number_of_fragments: 0 ]
+                        ]
+                ]
+        ]
 
         when:
-        def result = elasticsearchQuery.send("indexName", params)
+        SearchResponse result = elasticsearchQuery.send("freebase", params)
 
         then:
-        result.unauthorized
-        !result.body
-    }
-
-    def "should not be allowed to make a query with an invalid apiToken"() {
-        given:
-        def params = [apiToken: "Invalid Api Token"]
-
-        when:
-        def result = elasticsearchQuery.send("indexName", params)
-
-        then:
-        result.unauthorized
-        !result.body
-    }
-
-    def "should make query if token is valid"() {
-        given:
-        UserEntity user = userDAO.create("{'name': 'Freddy Krueger'}")
-
-        and:
-        def query = [apiToken: user.apiToken]
-
-        when:
-        def result = elasticsearchQuery.send("indexName", query)
-
-        then:
-        !result.unauthorized
-        result.body
+        result
+        result.took
+        result.hits.hits.size() == 10
+        result.aggregations.get("directed_by")["buckets"].size() == 10
+        result.aggregations.get("genre")["buckets"].size() == 10
     }
 
 
