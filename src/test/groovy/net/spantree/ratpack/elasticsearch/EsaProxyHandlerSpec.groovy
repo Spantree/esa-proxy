@@ -30,10 +30,7 @@ class EsaProxyHandlerSpec extends Specification {
         when:
         request.contentType("application/json")
             .body([
-                fields: [
-                    returned: ['name', 'description'],
-                    searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 aggs: [
                     genre: [
                         terms: [ field: 'genre.facet' ]

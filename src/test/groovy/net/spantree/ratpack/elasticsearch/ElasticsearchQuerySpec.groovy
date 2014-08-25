@@ -44,10 +44,7 @@ class ElasticsearchQuerySpec extends Specification {
     def "should proxy request to elasticsearch"() {
         given:
         def params = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 aggs: [
                         genre: [
                                 terms: [ field: 'genre.facet' ]
@@ -142,9 +139,9 @@ class ElasticsearchQuerySpec extends Specification {
 
         and:
         def queryParams = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
+                fields: ['name', 'description'],
+                _source: [
+                        include: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
@@ -166,24 +163,21 @@ class ElasticsearchQuerySpec extends Specification {
 
         when:
         EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
+        }
 
         then:
         !searchResponse.unauthorized
         searchResponse.body
+        directedBy.size() > 0
     }
 
     def "should not allow source_filters if they are not specified" () {
         given:
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
-                indices: [
-                        _default: [
-                                access: "allow",
-                                source_filters: [
-                                        "director.*"
-                                ]
-                        ]
-                ]
+                indices: [ _default: [ access: "allow", source_filters: ["director.*"] ] ]
         ]
 
         and:
@@ -191,12 +185,9 @@ class ElasticsearchQuerySpec extends Specification {
 
         and:
         def queryParams = [
-                fields: [
-                    returned: ['name', 'description'],
-                    searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 _source: [
-                    include: [ "directed_by" ]
+                    includes: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
@@ -225,7 +216,6 @@ class ElasticsearchQuerySpec extends Specification {
         then:
         !searchResponse.unauthorized
         searchResponse.body.hits.hits.size() > 0
-        searchResponse.body.hits.hits*.source
         directedBy.size() == 0
 
     }
@@ -249,10 +239,7 @@ class ElasticsearchQuerySpec extends Specification {
 
         and:
         def queryParams = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 _source: [
                         include: [ "directed_by" ]
                 ],

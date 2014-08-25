@@ -50,12 +50,18 @@ class ElasticsearchQuery {
         XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
         node.each{ String key, value ->
             if(key == "_source") {
-                value["include"] = applySourceFilters(indexName, value["include"])
-                if(value["include"].size() == 0) {
-                    value.remove("include")
+                value["includes"] = applySourceFilters(indexName, value["include"])
+                if(value["includes"].size() == 0) {
+                    value.remove("includes")
+                    value["excludes"] = ["*"]
                 }
             }
-            if(value.size() > 0) {
+
+            if(key == "fields") {
+                value = applyFieldFilters(indexName, value)
+            }
+
+            if(value || value.size() > 0) {
                 doc = addField(key, value, doc)
             }
         }
@@ -68,7 +74,10 @@ class ElasticsearchQuery {
         EsaSearchResponse searchResponse = new EsaSearchResponse()
         if(defaultAccessLevel(indexName)) {
             searchResponse.unauthorized = Boolean.FALSE
-            searchResponse.body = elasticsearchClientService.query(indexName, toXContentBuilder(indexName, params))
+            XContentBuilder doc = toXContentBuilder(indexName, params)
+            def readable = doc.string()
+            println readable
+            searchResponse.body = elasticsearchClientService.query(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }
@@ -100,21 +109,46 @@ class ElasticsearchQuery {
 
     List<String> applySourceFilters(String indexName, List<String> sourceFilters) {
         List<String> _sourceFilters = []
+        List<String> result = []
         if(esaPermissions.base.indices.containsKey(indexName)) {
             _sourceFilters << getSourceFilters(indexName)
         } else {
-            _sourceFilters << getSourceFilters("_default")
+            if(getSourceFilters("_default")) {
+                _sourceFilters << getSourceFilters("_default")
+            }
         }
-        def result = _sourceFilters.findAll{ String filter ->
-            sourceFilters.contains(filter?.tokenize(".")?.first())
+        if(_sourceFilters.size() > 0) {
+            result = _sourceFilters.findAll{ String filter ->
+                sourceFilters?.contains(filter?.tokenize(".")?.first())
+            }
+        } else {
+          result = sourceFilters
         }
         result.collect{ String res ->
             res.tokenize(".").first()
         }
     }
 
+    List<String> applyFieldFilters(String indexName, List<String> fields) {
+        List<String> fieldsToFilterBy = []
+        if(esaPermissions.base.indices.containsKey(indexName)) {
+            fieldsToFilterBy = getFieldFilters(indexName).findAll { String fieldFilter ->
+                fields.contains(fieldFilter)
+            }
+        } else {
+            fieldsToFilterBy = getFieldFilters("_default").findAll { String fieldFilter ->
+                fields.contains(fieldFilter)
+            }
+        }
+        fieldsToFilterBy
+    }
+
     private List<String> getSourceFilters(String indexName) {
         esaPermissions.base.indices[indexName]["source_filters"]
+    }
+
+    private List<String> getFieldFilters(String indexName) {
+        esaPermissions.base.indices[indexName]["fields"]
     }
 
 }
