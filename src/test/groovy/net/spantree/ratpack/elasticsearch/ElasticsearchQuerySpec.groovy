@@ -19,6 +19,7 @@ package net.spantree.ratpack.elasticsearch
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
 import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.search.internal.InternalSearchHit
 import spock.lang.Specification
 
 class ElasticsearchQuerySpec extends Specification {
@@ -169,5 +170,63 @@ class ElasticsearchQuerySpec extends Specification {
         then:
         !searchResponse.unauthorized
         searchResponse.body
+    }
+
+    def "should not allow source_filters if they are not specified" () {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                types: [
+                                        films: [
+                                                source_filters: [
+                                                        "director.*"
+                                                ]
+                                        ]
+                                ]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = [
+                fields: [
+                    returned: ['name', 'description'],
+                    searched: ['name', 'description']
+                ],
+                _source: [
+                    include: [ "directed_by.*" ]
+                ],
+                aggs: [
+                        genre: [
+                                terms: [ field: 'genre.facet' ]
+                        ],
+                        directed_by: [
+                                terms: [ field: 'directed_by.facet' ]
+                        ]
+                ],
+                highlight: [
+                        pre_tags: ['<mark>'],
+                        post_tags: ['</mark>'],
+                        fields: [
+                                name: [ number_of_fragments: 0 ],
+                                description: [ number_of_fragments: 0 ]
+                        ]
+                ]
+        ]
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+
+        then:
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.each { InternalSearchHit hit ->
+           ! hit.source.containsKey("directed_by")
+        }
     }
 }
