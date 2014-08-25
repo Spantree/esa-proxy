@@ -225,6 +225,7 @@ class ElasticsearchQuerySpec extends Specification {
 
         then:
         !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
         searchResponse.body.hits.hits.each { InternalSearchHit hit ->
            ! hit.source.containsKey("directed_by")
         }
