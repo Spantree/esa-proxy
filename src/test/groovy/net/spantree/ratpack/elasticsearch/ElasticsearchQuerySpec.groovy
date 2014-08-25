@@ -179,12 +179,8 @@ class ElasticsearchQuerySpec extends Specification {
                 indices: [
                         _default: [
                                 access: "allow",
-                                types: [
-                                        films: [
-                                                source_filters: [
-                                                        "director.*"
-                                                ]
-                                        ]
+                                source_filters: [
+                                        "director.*"
                                 ]
                         ]
                 ]
