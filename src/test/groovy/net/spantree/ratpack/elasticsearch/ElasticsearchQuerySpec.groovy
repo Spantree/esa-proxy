@@ -200,7 +200,7 @@ class ElasticsearchQuerySpec extends Specification {
                     searched: ['name', 'description']
                 ],
                 _source: [
-                    include: [ "directed_by.*" ]
+                    include: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
@@ -222,12 +222,73 @@ class ElasticsearchQuerySpec extends Specification {
 
         when:
         EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
+        }
 
         then:
         !searchResponse.unauthorized
         searchResponse.body.hits.hits.size() > 0
-        searchResponse.body.hits.hits.each { InternalSearchHit hit ->
-           ! hit.source.containsKey("directed_by")
+        searchResponse.body.hits.hits*.source
+        directedBy.size() == 0
+
+    }
+
+    def "should allow source_filters if they are specified" () {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                source_filters: [
+                                        "directed_by.*"
+                                ]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = [
+                fields: [
+                        returned: ['name', 'description'],
+                        searched: ['name', 'description']
+                ],
+                _source: [
+                        include: [ "directed_by" ]
+                ],
+                aggs: [
+                        genre: [
+                                terms: [ field: 'genre.facet' ]
+                        ],
+                        directed_by: [
+                                terms: [ field: 'directed_by.facet' ]
+                        ]
+                ],
+                highlight: [
+                        pre_tags: ['<mark>'],
+                        post_tags: ['</mark>'],
+                        fields: [
+                                name: [ number_of_fragments: 0 ],
+                                description: [ number_of_fragments: 0 ]
+                        ]
+                ]
+        ]
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
         }
+
+        then:
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        searchResponse.body.hits.hits*.source
+        directedBy.size() > 0
+
     }
 }

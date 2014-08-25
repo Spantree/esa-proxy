@@ -46,10 +46,18 @@ class ElasticsearchQuery {
         doc
     }
 
-    private XContentBuilder toXContentBuilder(Map node) {
+    private XContentBuilder toXContentBuilder(String indexName, Map node) {
         XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
         node.each{ String key, value ->
-            doc = addField(key, value, doc)
+            if(key == "_source") {
+                value["include"] = applySourceFilters(indexName, value["include"])
+                if(value["include"].size() == 0) {
+                    value.remove("include")
+                }
+            }
+            if(value.size() > 0) {
+                doc = addField(key, value, doc)
+            }
         }
 
         doc.endObject()
@@ -60,7 +68,7 @@ class ElasticsearchQuery {
         EsaSearchResponse searchResponse = new EsaSearchResponse()
         if(defaultAccessLevel(indexName)) {
             searchResponse.unauthorized = Boolean.FALSE
-            searchResponse.body = elasticsearchClientService.query(indexName, toXContentBuilder(params))
+            searchResponse.body = elasticsearchClientService.query(indexName, toXContentBuilder(indexName, params))
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }
@@ -88,6 +96,25 @@ class ElasticsearchQuery {
         }
 
         accessLevel
+    }
+
+    List<String> applySourceFilters(String indexName, List<String> sourceFilters) {
+        List<String> _sourceFilters = []
+        if(esaPermissions.base.indices.containsKey(indexName)) {
+            _sourceFilters << getSourceFilters(indexName)
+        } else {
+            _sourceFilters << getSourceFilters("_default")
+        }
+        def result = _sourceFilters.findAll{ String filter ->
+            sourceFilters.contains(filter?.tokenize(".")?.first())
+        }
+        result.collect{ String res ->
+            res.tokenize(".").first()
+        }
+    }
+
+    private List<String> getSourceFilters(String indexName) {
+        esaPermissions.base.indices[indexName]["source_filters"]
     }
 
 }
