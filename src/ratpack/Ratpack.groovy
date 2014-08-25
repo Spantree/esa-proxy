@@ -13,10 +13,12 @@ import static ratpack.groovy.Groovy.ratpack
 ratpack {
     bindings {
         String configDir = launchConfig.baseDir.file.toString() + "/config"
+        File esaSampleConfig = new File(configDir, "EsaSampleConfig.groovy")
+        String esaPermissions = configDir + "/EsaPermissions.js"
         add new JacksonModule()
         add new MarkupTemplatingModule()
         add new CodaHaleMetricsModule().jvmMetrics().jmx().websocket().healthChecks()
-        add new ElasticsearchModule(new File(configDir, "EsSampleConfig.groovy"))
+        add new ElasticsearchModule(esaSampleConfig, esaPermissions)
     }
 
     handlers {

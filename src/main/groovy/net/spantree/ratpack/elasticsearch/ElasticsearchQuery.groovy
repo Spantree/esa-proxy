@@ -61,9 +61,14 @@ class ElasticsearchQuery {
                 value = applyFieldFilters(indexName, value)
             }
 
-            if(value || value.size() > 0) {
+            if(value instanceof List) {
+                if(value || value?.size() > 0) {
+                    doc = addField(key, value, doc)
+                }
+            } else {
                 doc = addField(key, value, doc)
             }
+
         }
 
         doc.endObject()
@@ -75,8 +80,6 @@ class ElasticsearchQuery {
         if(defaultAccessLevel(indexName)) {
             searchResponse.unauthorized = Boolean.FALSE
             XContentBuilder doc = toXContentBuilder(indexName, params)
-            def readable = doc.string()
-            println readable
             searchResponse.body = elasticsearchClientService.query(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE

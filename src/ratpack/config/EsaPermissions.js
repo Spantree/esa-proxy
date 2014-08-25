@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package net.spantree.ratpack.elasticsearch
-
-import spock.lang.Ignore
-import spock.lang.Specification
-
-@Ignore
-class ElasticsearchClientBaseSpec extends Specification {
-    ElasticsearchClientService elasticsearchClientService
-
-    def setup() {
-        File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
-        def config = new ElasticsearchConfig(configFile)
-        elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
-    }
-}
+var base = {
+  indices: {
+      _default: {
+          access: "allow",
+          fields: ["name", "description"],
+          source_filters: ["directed_by"]
+      }
+  }
+};

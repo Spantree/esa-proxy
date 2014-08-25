@@ -27,7 +27,7 @@ class ElasticsearchQuerySpec extends Specification {
     ElasticsearchClientService elasticsearchClientService
 
     def setup() {
-        File configFile = new File("src/ratpack/config", "EsSampleConfig.groovy")
+        File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
         def config = new ElasticsearchConfig(configFile)
         elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
         def basicPermissions = new EsaPermissions()
