@@ -22,7 +22,7 @@ import org.elasticsearch.search.internal.InternalSearchHit
 
 class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
 
-    def "should ignore terms filters that are not specified when access level is allow"() {
+    def "should ignore field filters that are not specified when access level is allow"() {
         given:
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
@@ -35,7 +35,66 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
 
         and:
-        def queryParams = [
+        def queryParams = getQueryParams()
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
+        }
+        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
+            hit.fields
+        }
+
+        then:
+        searchResponse.body.hits.hits
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        searchResponse.body.hits.hits*.source
+        directedBy.size() > 0
+        fieldsReturned.size() == 0
+    }
+
+
+    def "should return field filters that are specified when access level is allow"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["directed_by", "produced_by"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = getQueryParams()
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
+        }
+        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
+            hit.fields
+        }
+
+        then:
+        searchResponse.body.hits.hits
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        searchResponse.body.hits.hits*.source
+        directedBy.size() > 0
+        fieldsReturned.size() == 0
+    }
+
+
+    def getQueryParams() {
+          [
                 fields: ['name', 'description'],
                 _source: [
                         include: [ "directed_by" ]
@@ -57,22 +116,5 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
                         ]
                 ]
         ]
-
-        when:
-        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
-        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
-            hit.source && hit.source["directed_by"]
-        }
-        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
-            hit.fields
-        }
-
-        then:
-        searchResponse.body.hits.hits
-        !searchResponse.unauthorized
-        searchResponse.body.hits.hits.size() > 0
-        searchResponse.body.hits.hits*.source
-        directedBy.size() > 0
-        fieldsReturned.size() == 0
     }
 }
