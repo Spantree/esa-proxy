@@ -69,13 +69,24 @@ class ElasticsearchQuery {
 
     Boolean defaultAccessLevel(String indexName) {
         Boolean accessLevel = Boolean.FALSE
-        switch(esaPermissions.base?.indices[indexName]["access"]) {
-            case "allow":
-                accessLevel = Boolean.TRUE
-                break
-            default:
-                accessLevel = Boolean.FALSE
+        if(esaPermissions.base.indices.containsKey(indexName)) {
+            switch(esaPermissions.base?.indices[indexName]["access"]) {
+                case "allow":
+                    accessLevel = Boolean.TRUE
+                    break
+                default:
+                    accessLevel = Boolean.FALSE
+            }
+        } else {
+            switch(esaPermissions.base.indices["_default"]["access"]) {
+                case "allow":
+                    accessLevel = Boolean.TRUE
+                    break
+                default:
+                    accessLevel = Boolean.FALSE
+            }
         }
+
         accessLevel
     }
 

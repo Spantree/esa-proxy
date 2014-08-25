@@ -125,4 +125,49 @@ class ElasticsearchQuerySpec extends Specification {
 
     }
 
+    def "should allow query if default access level is allow"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow"
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = [
+                fields: [
+                        returned: ['name', 'description'],
+                        searched: ['name', 'description']
+                ],
+                aggs: [
+                        genre: [
+                                terms: [ field: 'genre.facet' ]
+                        ],
+                        directed_by: [
+                                terms: [ field: 'directed_by.facet' ]
+                        ]
+                ],
+                highlight: [
+                        pre_tags: ['<mark>'],
+                        post_tags: ['</mark>'],
+                        fields: [
+                                name: [ number_of_fragments: 0 ],
+                                description: [ number_of_fragments: 0 ]
+                        ]
+                ]
+        ]
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+
+        then:
+        !searchResponse.unauthorized
+        searchResponse.body
+    }
 }
