@@ -18,7 +18,7 @@ var base = {
   indices: {
       _default: {
           access: "allow",
-          fields: ["name", "description"],
+          fields: ["name"],
           source_filters: ["directed_by"]
       }
   }

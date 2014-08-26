@@ -40,38 +40,43 @@ class ElasticsearchQuery {
                 break
             case "apiToken":
                 break
+            case "from":
+                doc.field(fieldName, new BigDecimal(value.toString()))
+                break
+            case "size":
+                doc.field(fieldName, new BigDecimal(value.toString()))
+                break
             default:
                 doc.field(fieldName, value)
+
         }
         doc
     }
 
     private XContentBuilder toXContentBuilder(String indexName, Map node) {
         XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
-        node.each{ String key, value ->
-            if(key == "_source") {
-                value["includes"] = applySourceFilters(indexName, value["include"])
-                if(value["includes"].size() == 0) {
-                    value.remove("includes")
-                    value["excludes"] = ["*"]
+        if(node) {
+            node.each{ String key, value ->
+                if(key == "_source") {
+                    value["includes"] = applySourceFilters(indexName, value["include"])
+                    if(value["includes"].size() == 0) {
+                        value.remove("includes")
+                        value["excludes"] = ["*"]
+                    }
                 }
-            }
 
-            if(key == "fields") {
-                value = applyFieldFilters(indexName, value)
-            }
-
-            if(value instanceof List) {
-                if(value || value?.size() > 0) {
-                    doc = addField(key, value, doc)
+                if(key == "fields") {
+                    value = applyFieldFilters(indexName, value)
+                    println "Fields being applied: ${value}"
                 }
-            } else {
                 doc = addField(key, value, doc)
             }
 
+            doc.endObject()
+        } else {
+            doc  = addField("_source", [excludes: ["*"]], doc)
+            doc = addField("fields", [], doc)
         }
-
-        doc.endObject()
         doc
     }
 

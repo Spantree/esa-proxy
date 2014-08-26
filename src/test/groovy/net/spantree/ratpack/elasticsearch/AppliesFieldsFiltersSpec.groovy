@@ -51,7 +51,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         !searchResponse.unauthorized
         searchResponse.body.hits.hits.size() > 0
         searchResponse.body.hits.hits*.source
-        directedBy.size() > 0
+        directedBy.size() == 0
         fieldsReturned.size() == 0
     }
 
@@ -88,16 +88,148 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         !searchResponse.unauthorized
         searchResponse.body.hits.hits.size() > 0
         searchResponse.body.hits.hits*.source
-        directedBy.size() > 0
+        directedBy.size() == 0
         fieldsReturned.size() == 0
     }
 
+
+    def "should ignore field filters that do not match those allowed"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["name"],
+                                source_filters: ["directed_by"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = getQueryParamsWithFields()
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
+            hit.fields
+        }
+
+        then:
+        searchResponse.body.hits.hits
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        fieldsReturned.size() == 0
+
+    }
+
+    def "should ignore field filters when an empty list is specified"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["name"],
+                                source_filters: ["directed_by"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = getQueryParamsWithFields()
+        queryParams.fields = []
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
+            hit.fields
+        }
+        def sourceReturned = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.sourceAsMap()
+        }
+
+        then:
+        searchResponse.body.hits.hits
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        fieldsReturned.size() == 0
+        sourceReturned.size() == 0
+
+    }
+
+    def "should return empty fields and _source when an empty query is posted"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["name"],
+                                source_filters: ["directed_by"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+
+        and:
+        def queryParams = [:]
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def fieldsReturned = searchResponse.body.hits.hits.findAll { InternalSearchHit hit ->
+            hit.fields
+        }
+        def sourceReturned = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.sourceAsMap()
+        }
+
+        then:
+        searchResponse.body.hits.hits
+        !searchResponse.unauthorized
+        searchResponse.body.hits.hits.size() > 0
+        fieldsReturned.size() == 0
+        sourceReturned.size() == 0
+    }
+
+    def getQueryParamsWithFields() {
+        [
+            query:
+                [bool:[must:[[query_string:[fields:["name","description"],query:"*" ] ]]]],
+            from:0,
+            size:10,
+            fields: ["inexistentField"],
+            aggs: [
+                    genre: [
+                        terms: [ field:"genre.facet"]
+                    ],
+                    directed_by: [terms: [field:"directed_by.facet" ]]
+            ],
+            highlight: [
+                    pre_tags:["<mark>"],
+                    post_tags:["</mark>"],
+                    fields: [
+                        name: [number_of_fragments: 0],
+                        description: [number_of_fragments: 0]
+                    ]
+            ]
+        ]
+
+    }
 
     def getQueryParams() {
           [
                 fields: ['name', 'description'],
                 _source: [
-                        include: [ "directed_by" ]
+                        includes: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
