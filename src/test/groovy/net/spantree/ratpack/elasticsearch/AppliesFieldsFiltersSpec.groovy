@@ -55,7 +55,6 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         fieldsReturned.size() == 0
     }
 
-
     def "should return field filters that are specified when access level is allow"() {
         given:
         def esaPermissions = new EsaPermissions()
@@ -91,7 +90,6 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         directedBy.size() == 0
         fieldsReturned.size() == 0
     }
-
 
     def "should ignore field filters that do not match those allowed"() {
         given:
