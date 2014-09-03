@@ -74,6 +74,27 @@ _source: {
 }
 ```
 
+Rules can also be applied per index:
+
+```javascript
+var base = {
+  indices: {
+      _default: {
+          access: "allow",
+          fields: ["name", "produced_by"],
+          source_filters: ["directed_by"]
+      },
+      freebase: {
+        access: "allow",
+        fields: ["name"],
+        source_filters: ["directed_by"]
+      }
+  }
+};
+```
+A query submitted to the "freebase" index to a proxy with this setup will only return the name fields, even if other
+fields are specified in the query.
+
 ## Contributing
 1. Every new feature must include a test. 
 2. Every new file must also include the Apache License at the beginning of the file.
