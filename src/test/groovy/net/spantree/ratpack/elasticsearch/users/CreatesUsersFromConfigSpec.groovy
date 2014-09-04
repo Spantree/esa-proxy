@@ -52,6 +52,5 @@ class CreatesUsersFromConfigSpec extends ElasticsearchClientBaseSpec {
 
         then:
         esaUser.username == "sampleUser"
-
     }
 }

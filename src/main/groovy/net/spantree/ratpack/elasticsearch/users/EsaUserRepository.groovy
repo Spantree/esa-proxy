@@ -42,7 +42,6 @@ class EsaUserRepository {
             doc.field("roles", options.roles)
             doc.endObject()
             return elasticsearchClientService.insert(INDEX_NAME, "users", doc).isCreated()
-
         } else {
             false
         }
