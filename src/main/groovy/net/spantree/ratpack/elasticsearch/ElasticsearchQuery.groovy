@@ -67,7 +67,6 @@ class ElasticsearchQuery {
 
                 if(key == "fields") {
                     value = applyFieldFilters(indexName, value)
-                    println "Fields being applied: ${value}"
                 }
                 doc = addField(key, value, doc)
             }

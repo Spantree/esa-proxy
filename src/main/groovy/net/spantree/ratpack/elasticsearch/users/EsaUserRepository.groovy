@@ -23,6 +23,7 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory
+import org.elasticsearch.search.internal.InternalSearchHit
 
 import javax.inject.Inject
 
@@ -44,6 +45,27 @@ class EsaUserRepository {
             return elasticsearchClientService.insert(INDEX_NAME, "users", doc).isCreated()
         } else {
             false
+        }
+    }
+
+    def bulkCreate(List<Map<String, Object>> users){
+        users.each { user ->
+            create(user)
+        }
+    }
+
+    List<EsaUser> all() {
+        def query = [
+                bool: [
+                        must: [[query_string: [query: "*"]]]
+                ]
+        ]
+        XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
+        doc.field("bool", query.bool)
+        doc.endObject()
+        SearchResponse searchResponse = elasticsearchClientService.query(INDEX_NAME, doc)
+        searchResponse.hits.hits.collect{ InternalSearchHit hit ->
+            new EsaUser(username: hit.source["username"], roles: hit.source["roles"] as List<String>)
         }
     }
 

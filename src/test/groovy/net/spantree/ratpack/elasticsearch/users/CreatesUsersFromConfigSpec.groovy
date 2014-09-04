@@ -19,16 +19,18 @@ package net.spantree.ratpack.elasticsearch.users
 import net.spantree.ratpack.elasticsearch.ElasticsearchClientBaseSpec
 
 class CreatesUsersFromConfigSpec extends ElasticsearchClientBaseSpec {
+    private final String INDEX_NAME = "esa_users"
     EsaUserRepository esaUserRepository
+
 
     def setup(){
         esaUserRepository = new EsaUserRepository(elasticsearchClientService)
-        if(elasticsearchClientService.indexExists("esa_users")) {
+        if(elasticsearchClientService.indexExists(INDEX_NAME)) {
             esaUserRepository.deleteIndex()
         }
         esaUserRepository.createIndex()
         esaUserRepository.create(username: "sampleUser", roles: ["GENERAL"])
-        elasticsearchClientService.client.admin().indices().prepareRefresh("esa_users").execute().actionGet()
+        elasticsearchClientService.client.admin().indices().prepareRefresh(INDEX_NAME).execute().actionGet()
     }
 
     def cleanup() {
@@ -52,5 +54,27 @@ class CreatesUsersFromConfigSpec extends ElasticsearchClientBaseSpec {
 
         then:
         esaUser.username == "sampleUser"
+    }
+
+    def "should create users in bulk"() {
+        given:
+        def users = [
+                [username: "john", roles: ["SINGER"]],
+                [username: "ringo", roles: ["DRUMMER"]],
+                [username: "paul", roles: ["SINGER", "GUITAR"]],
+                [username: "george", roles: ["SINGER", "GUITAR"]]
+        ]
+
+        when:
+        esaUserRepository.bulkCreate(users)
+        elasticsearchClientService.client.admin().indices().prepareRefresh(INDEX_NAME).execute().actionGet()
+
+        and:
+        def retrievedUsers = esaUserRepository.all()
+
+        then:
+        retrievedUsers.size() == users.size() + 1
+
+
     }
 }
