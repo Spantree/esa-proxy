@@ -85,7 +85,7 @@ class ElasticsearchQuery {
         if(defaultAccessLevel(indexName)) {
             searchResponse.unauthorized = Boolean.FALSE
             XContentBuilder doc = toXContentBuilder(indexName, params)
-            searchResponse.body = elasticsearchClientService.query(indexName, doc)
+            searchResponse.body = elasticsearchClientService.executeDocument(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }

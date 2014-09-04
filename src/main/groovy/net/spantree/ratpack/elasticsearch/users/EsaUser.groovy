@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-var base = {
-  indices: {
-      _default: {
-          access: "allow",
-          fields: ["name"],
-          source_filters: ["directed_by"]
-      }
-  }
-};
+package net.spantree.ratpack.elasticsearch.users
 
-//
-//var users = [
-//    {
-//        username: "A Username",
-//        roles: [""]
-//    }
-//]
+import groovy.transform.Immutable
+
+@Immutable
+class EsaUser {
+    String username
+    List<String> roles
+}

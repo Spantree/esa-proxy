@@ -16,9 +16,15 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import org.elasticsearch.action.index.IndexResponse
 import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.client.transport.TransportClient
 import org.elasticsearch.common.xcontent.XContentBuilder
 
 public interface ElasticsearchClientService {
+    SearchResponse executeDocument(String indexName, XContentBuilder doc)
     SearchResponse query(String indexName, XContentBuilder doc)
+    TransportClient getClient()
+    IndexResponse insert(String indexName, String docType, XContentBuilder doc)
+    boolean indexExists(String indexname)
 }
