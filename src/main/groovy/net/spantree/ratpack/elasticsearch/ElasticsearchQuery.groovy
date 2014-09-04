@@ -16,7 +16,6 @@
 
 package net.spantree.ratpack.elasticsearch
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
 import net.spantree.ratpack.elasticsearch.users.EsaUser
