@@ -90,6 +90,57 @@ class QueriesWithUserRolesRulesSpec extends ElasticsearchClientBaseSpec {
         searchResponse.body.hits.hits
     }
 
+    def "should not allow query if role is specified but user is absent"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["directed_by", "produced_by"],
+                                roles: ["DRUMMER", "GENERAL"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
+        def queryParams = getQueryParams()
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+
+        then:
+        searchResponse.unauthorized
+        !searchResponse.body
+    }
+
+    def "should not allow query if role is specified but an invalid username is provided"() {
+        given:
+        def esaPermissions = new EsaPermissions()
+        esaPermissions.base = [
+                indices: [
+                        _default: [
+                                access: "allow",
+                                fields: ["directed_by", "produced_by"],
+                                roles: ["DRUMMER", "GENERAL"]
+                        ]
+                ]
+        ]
+
+        and:
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
+        def queryParams = getQueryParams()
+        queryParams["user"] = "invalidUsername"
+
+        when:
+        EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+
+        then:
+        searchResponse.unauthorized
+        !searchResponse.body
+    }
+
     def getQueryParams() {
         [
                 fields: ['name', 'description'],

@@ -27,6 +27,11 @@ import org.elasticsearch.search.internal.InternalSearchHit
 
 import javax.inject.Inject
 
+/**
+ * Repository for creating and fetching Esa Users.
+ * All Esa Users are stored in an "esa_users" index and are assigned roles. These roles can then be used
+ * to restrict access to specific indices.
+ */
 class EsaUserRepository {
     private final String INDEX_NAME = "esa_users"
     private final ElasticsearchClientService elasticsearchClientService
@@ -36,6 +41,16 @@ class EsaUserRepository {
         this.elasticsearchClientService = elasticsearchClientService
     }
 
+    /**
+     * Create an Esa User.
+     * @param options A Map with the attributes for the user. These should be:
+     * <ol>
+     *     <li>username: A string representing the username.</li>
+     *     <li>roles: A List of strings representing the user roles.</li>
+     *</ol>
+     * If these are not present, then we get a noop.
+     * @return true if user is created successfully.
+     */
     public boolean create(Map<String, Object> options) {
         if(options.containsKey("username") && options.containsKey("roles")) {
             XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
@@ -54,6 +69,10 @@ class EsaUserRepository {
         }
     }
 
+    /**
+     * Fetchs all the Esa Users.
+     * @return List of Esa Users.
+     */
     List<EsaUser> all() {
         def query = [
                 bool: [
@@ -69,19 +88,34 @@ class EsaUserRepository {
         }
     }
 
+    /**
+     * Finds an esa user with the matching username
+     * @param username
+     * @return An instance of EsaUser. If no matches are found, its username and roles fields will be null.
+     */
     EsaUser findByUsername(String username) {
-        def query = [
-                bool: [
-                        must: [[query_string: [query: username]]]
-                ]
-        ]
-        XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
-        doc.field("bool", query.bool)
-        doc.endObject()
-        SearchResponse searchResponse = elasticsearchClientService.query(INDEX_NAME, doc)
-        new EsaUser( username: searchResponse.hits.hits.first().source["username"], roles: searchResponse.hits.hits.first().source["roles"] as List<String>)
+        EsaUser user = new EsaUser()
+        if(username) {
+            def query = [
+                    bool: [
+                            must: [[query_string: [query: username]]]
+                    ]
+            ]
+            XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
+            doc.field("bool", query.bool)
+            doc.endObject()
+            SearchResponse searchResponse = elasticsearchClientService.query(INDEX_NAME, doc)
+            if(searchResponse.hits.hits.size() > 0) {
+                user = new EsaUser( username: searchResponse.hits.hits.first().source["username"], roles: searchResponse.hits.hits.first().source["roles"] as List<String>)
+            }
+        }
+        user
     }
 
+    /**
+     * Creates in the "esa_users" index.
+     * @return
+     */
     CreateIndexResponse createIndex() {
         final CreateIndexRequestBuilder createIndexRequestBuilder = elasticsearchClientService.client.admin().indices().prepareCreate(INDEX_NAME)
         final XContentBuilder mappingBuilder = XContentFactory.jsonBuilder()
@@ -102,6 +136,10 @@ class EsaUserRepository {
         response
     }
 
+    /**
+     * Deletes the "esa_users" index.
+     * @return
+     */
     DeleteIndexResponse deleteIndex() {
         elasticsearchClientService.client.admin().indices().prepareDelete("esa_users").execute().actionGet()
     }
