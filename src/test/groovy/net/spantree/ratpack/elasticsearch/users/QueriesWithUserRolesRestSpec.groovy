@@ -74,28 +74,41 @@ class QueriesWithUserRolesRestSpec extends Specification {
         !locations
     }
 
-    def getQueryParams() {
-        [
-                fields   : ['name', 'description'],
-                _source  : [
-                        includes: ["directed_by"]
-                ],
-                aggs     : [
-                        genre: [
-                                terms: [field: 'genre.facet']
-                        ],
-                        directed_by: [
-                                terms: [field: 'directed_by.facet']
-                        ]
-                ],
-                highlight: [
-                        pre_tags: ['<mark>'],
-                        post_tags: ['</mark>'],
-                        fields  : [
-                                name: [number_of_fragments: 0],
-                                description: [number_of_fragments: 0]
-                        ]
-                ]
-        ]
+    def "should allow query if user role is allowed"() {
+        given:
+        def json = new JsonSlurper()
+
+        when:
+        requestSpec{ RequestSpec requestSpec ->
+            requestSpec.body.type("application/json")
+            requestSpec.body.text(JsonOutput.toJson([
+                    user: "ringo",
+                    fields: ['name', 'description'],
+                    aggs: [
+                            name: [
+                                    terms: [ field: 'name' ]
+                            ]
+                    ],
+                    highlight: [
+                            pre_tags: ['<mark>'],
+                            post_tags: ['</mark>'],
+                            fields: [
+                                    name: [ number_of_fragments: 0 ],
+                                    description: [ number_of_fragments: 0 ]
+                            ]
+                    ]
+            ]))
+        }
+        post("locations/_search")
+
+        then:
+        def locations = json.parseText(response.body.text)
+        response.statusCode == 200
+        locations["_shards"].containsKey("failed")
+        locations["_shards"].containsKey("successful")
+        locations["_shards"].containsKey("total")
+        locations["hits"]["hits"].size() == 10
+        locations["aggregations"]["name"]["buckets"].size() > 0
+        !locations["timed_out"]
     }
 }
