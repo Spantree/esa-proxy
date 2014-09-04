@@ -22,6 +22,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Scopes
 import net.spantree.esa.EsaPermissions
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 
 import javax.inject.Singleton
 import javax.script.ScriptEngine
@@ -44,6 +45,7 @@ class ElasticsearchModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(ElasticsearchQuery.class).in(Scopes.SINGLETON)
+        bind(EsaUserRepository.class).in(Scopes.SINGLETON)
     }
 
     @Provides

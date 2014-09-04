@@ -16,20 +16,37 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import ratpack.groovy.test.LocalScriptApplicationUnderTest
-import ratpack.groovy.test.TestHttpClient
-import ratpack.groovy.test.TestHttpClients
+import ratpack.http.client.RequestSpec
 import ratpack.test.ApplicationUnderTest
+import ratpack.test.http.TestHttpClient
+import ratpack.test.http.TestHttpClients
+import ratpack.test.remote.RemoteControl
 import spock.lang.Specification
 
 class EsaProxyHandlerSpec extends Specification {
     ApplicationUnderTest aut = new LocalScriptApplicationUnderTest('other.remoteControl.enabled': 'true')
     @Delegate TestHttpClient client = TestHttpClients.testHttpClient(aut)
+    RemoteControl remote = new RemoteControl(aut)
+
+    def cleanup() {
+        remote.exec {
+            get(EsaUserRepository).deleteIndex()
+            true //We need to return a Serializable value.
+        }
+    }
 
     def "lists ten items by default"() {
+        given:
+        def json = new JsonSlurper()
+
         when:
-        request.contentType("application/json")
-            .body([
+        requestSpec{ RequestSpec requestSpec ->
+            requestSpec.body.type("application/json")
+            requestSpec.body.text(JsonOutput.toJson([
                 fields: ['name', 'description'],
                 aggs: [
                     genre: [
@@ -47,20 +64,19 @@ class EsaProxyHandlerSpec extends Specification {
                         description: [ number_of_fragments: 0 ]
                     ]
                 ]
-            ])
+            ]))
+        }
         post("freebase/_search")
 
         then:
-        with(response.jsonPath()) {
-            getMap("hits").hits.size() == 10
-            !getBoolean("timed_out")
-            getInt("took") > 0
-            getMap("_shards").containsKey("failed")
-            getMap("_shards").containsKey("successful")
-            getMap("_shards").containsKey("total")
-            getMap("aggregations").directed_by.buckets.size() > 0
-            getMap("aggregations").genre.buckets.size() > 0
-        }
+        def results = json.parseText(response.body.text)
+        results["_shards"].containsKey("failed")
+        results["_shards"].containsKey("successful")
+        results["_shards"].containsKey("total")
+        results["hits"]["hits"].size() == 10
+        results["aggregations"]["directed_by"]["buckets"].size() > 0
+        results["aggregations"]["genre"]["buckets"].size() > 0
+        !results["timed_out"]
     }
 
 }

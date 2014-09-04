@@ -178,10 +178,9 @@ class ElasticsearchQuery {
             if(hasRoleRestrictions(indexName)) {
                 EsaUser esaUser = esaUserRepository.findByUsername(username)
                 defaultAccess = esaPermissions.base.indices[indexName]["roles"].findAll { String role ->
-                    esaUser.roles.contains(role)
+                    esaUser.roles?.contains(role)
                 }.size() > 0
             }
-            //compare user roles with roles in esaPermissions.base.indices[indexName][user]
         } else {
             if(hasRoleRestrictions("_default")) {
                 EsaUser esaUser = esaUserRepository.findByUsername(username)
@@ -194,7 +193,7 @@ class ElasticsearchQuery {
     }
 
     private Boolean hasRoleRestrictions(String indexName) {
-        esaPermissions.base.indices[indexName]["roles"] && esaPermissions.base.indices[indexName]["roles"].size() > 0
+        esaPermissions.base.indices[indexName].containsKey("roles") && esaPermissions.base.indices[indexName]["roles"].size() > 0
     }
 
 }

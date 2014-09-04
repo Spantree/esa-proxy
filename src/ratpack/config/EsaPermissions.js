@@ -20,14 +20,19 @@ var base = {
           access: "allow",
           fields: ["name"],
           source_filters: ["directed_by"]
+      },
+      locations: {
+          access: "allow",
+          fields: ["about", "description", "name"],
+          source_filters: ["directed_by"],
+          roles: ["GUITAR", "DRUMMER"]
       }
   }
 };
 
-//
-//var users = [
-//    {
-//        username: "A Username",
-//        roles: [""]
-//    }
-//]
+var users = [
+    {username: "ringo", roles: ["DRUMMER"]},
+    {username: "george", roles: ["GUITAR", "VOCALS"]},
+    {username: "john", roles: ["GUITAR", "VOCALS"]},
+    {username: "paul", roles: ["BASS", "VOCALS"]}
+];

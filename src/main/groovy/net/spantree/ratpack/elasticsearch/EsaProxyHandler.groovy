@@ -45,6 +45,9 @@ class EsaProxyHandler extends GroovyHandler {
                         Map node = parse Map
                         elasticsearchQuery.send(context.pathTokens.indexName, node)
                     } then { EsaSearchResponse resp ->
+                        if(resp.unauthorized) {
+                            response.status(401)
+                        }
                         context.render json(new JsonSlurper().parseText(resp.body.toString()))
                     }
                 }
