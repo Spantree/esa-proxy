@@ -18,9 +18,15 @@ package net.spantree.ratpack.elasticsearch
 
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import org.elasticsearch.search.internal.InternalSearchHit
 
 class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
+    EsaUserRepository esaUserRepository
+
+    def setup() {
+        esaUserRepository = new EsaUserRepository(elasticsearchClientService)
+    }
 
     def "should ignore field filters that are not specified when access level is allow"() {
         given:
@@ -32,7 +38,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = getQueryParams()
@@ -68,7 +74,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = getQueryParams()
@@ -105,7 +111,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = getQueryParamsWithFields()
@@ -138,7 +144,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = getQueryParamsWithFields()
@@ -176,7 +182,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [:]

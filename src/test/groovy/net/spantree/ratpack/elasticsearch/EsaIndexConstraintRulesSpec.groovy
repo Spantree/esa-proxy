@@ -18,9 +18,15 @@ package net.spantree.ratpack.elasticsearch
 
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import org.elasticsearch.search.internal.InternalSearchHit
 
 class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
+    EsaUserRepository esaUserRepository
+
+    def setup() {
+        esaUserRepository = new EsaUserRepository(elasticsearchClientService)
+    }
 
     def "should deny access to an index if not explicitly allowed"() {
         given:
@@ -33,7 +39,7 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
         def queryParams = getQueryParams()
 
         when:
@@ -54,7 +60,7 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
         def queryParams = getQueryParams()
 
         when:
@@ -75,7 +81,7 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
         def queryParams = getQueryParams()
 
         when:
@@ -102,7 +108,7 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
         def queryParams = getQueryParams()
 
         when:

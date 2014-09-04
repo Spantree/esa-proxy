@@ -66,6 +66,7 @@ class ElasticsearchModule extends AbstractModule {
         scriptEngine.eval(new FileReader(esaPermissionsFileName))
         EsaPermissions esaPermissions = new EsaPermissions()
         esaPermissions.base = scriptEngine.get("base")
+        esaPermissions.users = scriptEngine.get("users")
         esaPermissions
     }
 }

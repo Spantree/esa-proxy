@@ -22,7 +22,6 @@ class CreatesUsersFromConfigSpec extends ElasticsearchClientBaseSpec {
     private final String INDEX_NAME = "esa_users"
     EsaUserRepository esaUserRepository
 
-
     def setup(){
         esaUserRepository = new EsaUserRepository(elasticsearchClientService)
         if(elasticsearchClientService.indexExists(INDEX_NAME)) {
@@ -74,7 +73,5 @@ class CreatesUsersFromConfigSpec extends ElasticsearchClientBaseSpec {
 
         then:
         retrievedUsers.size() == users.size() + 1
-
-
     }
 }

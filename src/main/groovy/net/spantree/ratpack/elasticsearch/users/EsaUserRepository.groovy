@@ -79,7 +79,7 @@ class EsaUserRepository {
         doc.field("bool", query.bool)
         doc.endObject()
         SearchResponse searchResponse = elasticsearchClientService.query(INDEX_NAME, doc)
-        new EsaUser( username: searchResponse.hits.hits.first().source["username"])
+        new EsaUser( username: searchResponse.hits.hits.first().source["username"], roles: searchResponse.hits.hits.first().source["roles"] as List<String>)
     }
 
     CreateIndexResponse createIndex() {

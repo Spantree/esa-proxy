@@ -21,4 +21,5 @@ package net.spantree.esa
  */
 class EsaPermissions {
     Map<String, String> base
+    List<Map<String, List<String>>> users
 }

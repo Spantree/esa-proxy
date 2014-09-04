@@ -18,6 +18,7 @@ package net.spantree.ratpack.elasticsearch
 
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.search.internal.InternalSearchHit
 import spock.lang.Specification
@@ -25,6 +26,7 @@ import spock.lang.Specification
 class ElasticsearchQuerySpec extends Specification {
     ElasticsearchQuery elasticsearchQuery
     ElasticsearchClientService elasticsearchClientService
+    EsaUserRepository esaUserRepository
 
     def setup() {
         File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
@@ -38,7 +40,8 @@ class ElasticsearchQuerySpec extends Specification {
                         ]
                 ]
         ]
-        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService, basicPermissions)
+        esaUserRepository = new EsaUserRepository(elasticsearchClientService)
+        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService, basicPermissions, esaUserRepository)
     }
 
     def "should proxy request to elasticsearch"() {
@@ -87,7 +90,7 @@ class ElasticsearchQuerySpec extends Specification {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
@@ -135,7 +138,7 @@ class ElasticsearchQuerySpec extends Specification {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
@@ -181,7 +184,7 @@ class ElasticsearchQuerySpec extends Specification {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
@@ -235,7 +238,7 @@ class ElasticsearchQuerySpec extends Specification {
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
