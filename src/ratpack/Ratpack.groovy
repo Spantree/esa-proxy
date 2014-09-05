@@ -26,9 +26,12 @@ ratpack {
         add new RemoteControlModule()
 
         init { EsaUserRepository esaUserRepository, ElasticsearchClientService elasticsearchClientService, EsaPermissions esaPermissions ->
-            if(!elasticsearchClientService.indexExists("esa_users")) {
-                esaUserRepository.createIndex()
+            //We recreate the index and add the users every time the application is re-started. We do this to avoid
+            //creating duplicate users.
+            if(elasticsearchClientService.indexExists("esa_users")) {
+                esaUserRepository.deleteIndex()
             }
+            esaUserRepository.createIndex()
             esaUserRepository.bulkCreate(esaPermissions.users)
             elasticsearchClientService.client.admin().indices().prepareRefresh("esa_users").execute().actionGet()
         }

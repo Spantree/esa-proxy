@@ -95,7 +95,40 @@ var base = {
 A query submitted to the "freebase" index to a proxy with this setup will only return the name fields, even if other
 fields are specified in the query.
 
+# User/Roles Permissions
+This feature tries to emulate other database management systems that support the ability to create users to specific roles
+that restricts or enables features. We can create these users within __src/ratpack/config/EsaPermissions.js__.
+
+```javascript
+var base = {
+  indices: {
+      _default: {
+          access: "allow",
+          fields: ["name", "produced_by"],
+          source_filters: ["directed_by"]
+      },
+      freebase: {
+        access: "allow",
+        fields: ["name"],
+        source_filters: ["directed_by"],
+        roles: ["DRUMMER", "GUITARS"]
+      }
+  }
+};
+
+var users = [
+ {username: "ringo", roles: ["DRUMMER"]},
+    {username: "george", roles: ["GUITAR", "VOCALS"]},
+    {username: "john", roles: ["GUITAR", "VOCALS"]},
+    {username: "paul", roles: ["BASS", "VOCALS"]}
+];
+```
+
+This setup will only allow users that have "GUITARS" or "DRUMMER" roles to query "freebase" index. 
+
+
 ## Contributing
 1. Every new feature must include a test. 
 2. Every new file must also include the Apache License at the beginning of the file.
 3. Add at least a sentence describing what the class that is created does.
+4. As much as possible, when opening an issue, please try to include a branch with a failing test.
