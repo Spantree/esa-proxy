@@ -95,7 +95,7 @@ var base = {
 A query submitted to the "freebase" index to a proxy with this setup will only return the name fields, even if other
 fields are specified in the query.
 
-# User/Roles Permissions
+### User/Roles Permissions
 This feature tries to emulate other database management systems that support the ability to create users to specific roles
 that restricts or enables features. We can create these users within __src/ratpack/config/EsaPermissions.js__.
 
@@ -117,14 +117,18 @@ var base = {
 };
 
 var users = [
- {username: "ringo", roles: ["DRUMMER"]},
+    {username: "ringo", roles: ["DRUMMER"]},
     {username: "george", roles: ["GUITAR", "VOCALS"]},
     {username: "john", roles: ["GUITAR", "VOCALS"]},
     {username: "paul", roles: ["BASS", "VOCALS"]}
 ];
 ```
 
-This setup will only allow users that have "GUITARS" or "DRUMMER" roles to query "freebase" index. 
+This setup will only allow users that have "GUITARS" or "DRUMMER" roles to query "freebase" index.
+If a user that does not belong to any of those roles tries to query "freebase", then a 401 will be returned.
+
+Indices without any roles restrictions will allow any user to query them and only apply the rules for __fields__ and
+__source_fields__.
 
 
 ## Contributing
