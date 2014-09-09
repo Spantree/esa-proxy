@@ -44,11 +44,11 @@ class QueriesWithUserRolesRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["directed_by", "produced_by"],
                                 roles: ["DRUMMER"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -69,11 +69,11 @@ class QueriesWithUserRolesRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["directed_by", "produced_by"],
                                 roles: ["DRUMMER", "GENERAL"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -95,11 +95,11 @@ class QueriesWithUserRolesRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["directed_by", "produced_by"],
                                 roles: ["DRUMMER", "GENERAL"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -120,11 +120,11 @@ class QueriesWithUserRolesRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["directed_by", "produced_by"],
                                 roles: ["DRUMMER", "GENERAL"]
-                        ]
+                        ]]
                 ]
         ]
 

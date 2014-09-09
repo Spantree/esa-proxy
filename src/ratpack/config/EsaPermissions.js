@@ -16,17 +16,17 @@
 
 var base = {
   indices: {
-      _default: {
-          access: "allow",
+      _default: [
+          {access: "allow",
           fields: ["name"],
           source_filters: ["directed_by"]
-      },
-      locations: {
+      }],
+      locations: [{
           access: "allow",
           fields: ["about", "description", "name"],
           source_filters: ["directed_by"],
           roles: ["GUITAR", "DRUMMER"]
-      }
+      }]
   }
 };
 

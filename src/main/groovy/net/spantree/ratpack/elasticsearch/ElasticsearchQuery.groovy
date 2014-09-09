@@ -16,6 +16,7 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import net.spantree.esa.EsaPermissionConfiguration
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
 import net.spantree.ratpack.elasticsearch.users.EsaUser
@@ -57,7 +58,7 @@ class ElasticsearchQuery {
         doc
     }
 
-    private XContentBuilder toXContentBuilder(String indexName, Map node) {
+    private XContentBuilder toXContentBuilder(String indexName, Map node, EsaPermissionConfiguration indexConfiguration) {
         XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
         if(node) {
             node.each{ String key, value ->
@@ -65,7 +66,7 @@ class ElasticsearchQuery {
                     case "user":
                         break
                     case "_source":
-                        value["includes"] = applySourceFilters(indexName, value["include"])
+                        value["includes"] = applySourceFilters(value["include"], indexConfiguration)
                         if(value["includes"].size() == 0) {
                             value.remove("includes")
                             value["excludes"] = ["*"]
@@ -73,7 +74,7 @@ class ElasticsearchQuery {
                         doc = addField(key, value, doc)
                         break
                     case "fields":
-                        value = applyFieldFilters(indexName, value)
+                        value = applyFieldFilters(value, indexConfiguration)
                         doc = addField(key, value, doc)
                         break
                     default:
@@ -88,111 +89,45 @@ class ElasticsearchQuery {
         doc
     }
 
-    EsaSearchResponse send(String indexName, Map params) {
+    EsaSearchResponse send(String indexName, Map query) {
         EsaSearchResponse searchResponse = new EsaSearchResponse()
-        if(defaultAccessLevel(indexName)) {
-            if(hasRoleAccess(params.user, indexName)) {
-                searchResponse.unauthorized = Boolean.FALSE
-                XContentBuilder doc = toXContentBuilder(indexName, params)
-                searchResponse.body = elasticsearchClientService.executeDocument(indexName, doc)
-            } else {
-                searchResponse.unauthorized = Boolean.TRUE
-            }
+        List<String> roles = []
+        if(query.containsKey("user")) {
+            EsaUser esaUser = esaUserRepository.findByUsername(query.user)
+            roles = esaUser.roles
+        }
+        EsaPermissionConfiguration indexConfiguration = esaPermissions.where indexName: indexName, roles: roles
+        if(indexConfiguration.isAccessible()) {
+            XContentBuilder doc = toXContentBuilder(indexName, query, indexConfiguration)
+            searchResponse.body = elasticsearchClientService.executeDocument(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }
         searchResponse
     }
 
-    Boolean defaultAccessLevel(String indexName) {
-        Boolean accessLevel = Boolean.FALSE
-        if(esaPermissions.base.indices.containsKey(indexName)) {
-            switch(esaPermissions.base?.indices[indexName]["access"]) {
-                case "allow":
-                    accessLevel = Boolean.TRUE
-                    break
-                default:
-                    accessLevel = Boolean.FALSE
-            }
-        } else {
-            switch(esaPermissions.base.indices["_default"]["access"]) {
-                case "allow":
-                    accessLevel = Boolean.TRUE
-                    break
-                default:
-                    accessLevel = Boolean.FALSE
-            }
-        }
-
-        accessLevel
-    }
-
-    List<String> applySourceFilters(String indexName, List<String> sourceFilters) {
-        List<String> _sourceFilters = []
+    List<String> applySourceFilters(List<String> sourceFilters, EsaPermissionConfiguration indexConfiguration) {
         List<String> result = []
-        if(esaPermissions.base.indices.containsKey(indexName)) {
-            _sourceFilters << getSourceFilters(indexName)
-        } else {
-            if(getSourceFilters("_default")) {
-                _sourceFilters << getSourceFilters("_default")
-            }
-        }
-        if(_sourceFilters.size() > 0) {
-            result = _sourceFilters.findAll{ String filter ->
-                sourceFilters?.contains(filter?.tokenize(".")?.first())
+        if(indexConfiguration.sourceFilters?.size() > 0 && sourceFilters?.size() > 0) {
+            result = indexConfiguration.sourceFilters.findAll { String filter ->
+                sourceFilters.contains( filter?.tokenize(".")?.first() )
             }
         } else {
-          result = sourceFilters
+            result = sourceFilters
         }
         result.collect{ String res ->
-            res.tokenize(".").first()
+            res?.tokenize(".")?.first()
         }
     }
 
-    List<String> applyFieldFilters(String indexName, List<String> fields) {
+    List<String> applyFieldFilters(List<String> fields, EsaPermissionConfiguration indexConfiguration) {
         List<String> fieldsToFilterBy = []
-        if(esaPermissions.base.indices.containsKey(indexName)) {
-            fieldsToFilterBy = getFieldFilters(indexName).findAll { String fieldFilter ->
-                fields.contains(fieldFilter)
-            }
-        } else {
-            fieldsToFilterBy = getFieldFilters("_default").findAll { String fieldFilter ->
+        if(indexConfiguration.fields?.size() > 0) {
+            fieldsToFilterBy = indexConfiguration.fields.findAll { String fieldFilter ->
                 fields.contains(fieldFilter)
             }
         }
         fieldsToFilterBy
-    }
-
-    private List<String> getSourceFilters(String indexName) {
-        esaPermissions.base.indices[indexName]["source_filters"]
-    }
-
-    private List<String> getFieldFilters(String indexName) {
-        esaPermissions.base.indices[indexName]["fields"]
-    }
-
-    private Boolean hasRoleAccess(String username, String indexName) {
-        Boolean defaultAccess = Boolean.TRUE
-        if(esaPermissions.base.indices?.containsKey(indexName)){
-            if(hasRoleRestrictions(indexName)) {
-                EsaUser esaUser = esaUserRepository.findByUsername(username)
-                defaultAccess = esaPermissions.base.indices[indexName]["roles"].findAll { String role ->
-                    esaUser.roles?.contains(role)
-                }.size() > 0
-            }
-        } else {
-            if(hasRoleRestrictions("_default")) {
-                EsaUser esaUser = esaUserRepository.findByUsername(username)
-                defaultAccess = esaPermissions.base.indices["_default"]["roles"].findAll { String role ->
-                    esaUser.roles?.contains(role)
-                }.size() > 0
-            }
-        }
-        defaultAccess
-    }
-
-    private Boolean hasRoleRestrictions(String indexName) {
-        esaPermissions.base.indices[indexName].containsKey("roles") && esaPermissions.base.indices[indexName]["roles"].size() > 0
     }
 
 }

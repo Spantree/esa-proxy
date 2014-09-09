@@ -33,7 +33,7 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [ access: "allow" ]
+                        _default: [[ access: "allow" ]]
                 ]
         ]
 
@@ -66,10 +66,10 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["directed_by", "produced_by"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -102,11 +102,11 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["name"],
                                 source_filters: ["directed_by"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -135,11 +135,11 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["name"],
                                 source_filters: ["directed_by"]
-                        ]
+                        ]]
                 ]
         ]
 
@@ -173,11 +173,11 @@ class AppliesFieldsFiltersSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["name"],
                                 source_filters: ["directed_by"]
-                        ]
+                        ]]
                 ]
         ]
 

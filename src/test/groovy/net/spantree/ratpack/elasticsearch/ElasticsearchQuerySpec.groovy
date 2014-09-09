@@ -35,9 +35,9 @@ class ElasticsearchQuerySpec extends Specification {
         def basicPermissions = new EsaPermissions()
         basicPermissions.base = [
                 indices: [
-                        freebase: [
+                        freebase: [[
                             access: "allow"
-                        ]
+                        ]]
                 ]
         ]
         esaUserRepository = new EsaUserRepository(elasticsearchClientService)
@@ -83,9 +83,9 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        freebase: [
+                        freebase: [[
                                 access: "deny"
-                        ]
+                        ]]
                 ]
         ]
 
@@ -131,9 +131,9 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow"
-                        ]
+                        ]]
                 ]
         ]
 
@@ -180,7 +180,7 @@ class ElasticsearchQuerySpec extends Specification {
         given:
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
-                indices: [ _default: [ access: "allow", source_filters: ["director.*"] ] ]
+                indices: [ _default: [[ access: "allow", source_filters: ["director.*"] ]] ]
         ]
 
         and:
@@ -228,12 +228,12 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 source_filters: [
                                         "directed_by.*"
                                 ]
-                        ]
+                        ]]
                 ]
         ]
 

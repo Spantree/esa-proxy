@@ -33,7 +33,7 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [access: "allow"],
+                        _default: [[access: "allow"]],
                         freebase: []
                 ]
         ]
@@ -54,8 +54,8 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [access: "allow"],
-                        freebase: [access: "deny"]
+                        _default: [[access: "allow"]],
+                        freebase: [[access: "deny"]]
                 ]
         ]
 
@@ -75,8 +75,8 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [access: "allow"],
-                        freebase: [access: "allow"]
+                        _default: [[access: "allow"]],
+                        freebase: [[access: "allow"]]
                 ]
         ]
 
@@ -96,14 +96,14 @@ class EsaIndexConstraintRulesSpec extends ElasticsearchClientBaseSpec {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 fields: ["name", "directed_by"]
-                        ],
-                        freebase: [
+                        ]],
+                        freebase: [[
                                 access: "allow",
                                 fields: ["name"]
-                        ]
+                        ]]
                 ]
         ]
 
