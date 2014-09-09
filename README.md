@@ -79,7 +79,7 @@ Rules can also be applied per index:
 ```javascript
 var base = {
   indices: {
-      _default: {
+      _default: [{
           access: "allow",
           fields: ["name", "produced_by"],
           source_filters: ["directed_by"]
@@ -88,7 +88,7 @@ var base = {
         access: "allow",
         fields: ["name"],
         source_filters: ["directed_by"]
-      }
+      }]
   }
 };
 ```
@@ -102,17 +102,17 @@ that restricts or enables features. We can create these users within __src/ratpa
 ```javascript
 var base = {
   indices: {
-      _default: {
+      _default: [{
           access: "allow",
           fields: ["name", "produced_by"],
           source_filters: ["directed_by"]
-      },
-      freebase: {
+      }],
+      freebase: [{
         access: "allow",
         fields: ["name"],
         source_filters: ["directed_by"],
         roles: ["DRUMMER", "GUITARS"]
-      }
+      }]
   }
 };
 
@@ -129,6 +129,33 @@ If a user that does not belong to any of those roles tries to query "freebase", 
 
 Indices without any roles restrictions will allow any user to query them and only apply the rules for __fields__ and
 __source_fields__.
+
+We can also create role-specific rules for an index. Each index takes a list of configurations, and each of these lists 
+can be restricted by roles:
+
+```javascript
+anIndex: [{
+    access: "allow",
+    fields: ["name"],
+    roles: ["DRUMMER"]
+    },
+    {
+    access: "allow",
+    fields: ["description"],
+    roles: ["BASS"]
+    },
+    {
+    access: "allow",
+    fields: ["name", "description"]
+    roles: ["GUITARS"]
+    }
+];
+```
+
+The above provides separate settings for "DRUMMERS", "BASS", and "GUITARS" when they try to query "anIndex".
+
+_Note_ that when  query is sent for a particular user, and that user is in multiple groups, the configuration that is used will be the
+first one found to match for that user group.
 
 
 ## Contributing
