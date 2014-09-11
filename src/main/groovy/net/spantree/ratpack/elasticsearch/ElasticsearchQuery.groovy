@@ -16,8 +16,11 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import net.spantree.esa.EsaPermissionConfiguration
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
+import net.spantree.ratpack.elasticsearch.users.EsaUser
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory
 
@@ -26,11 +29,13 @@ import javax.inject.Inject
 class ElasticsearchQuery {
     private final ElasticsearchClientService elasticsearchClientService
     private final EsaPermissions esaPermissions
+    private final EsaUserRepository esaUserRepository
 
     @Inject
-    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService, EsaPermissions esaPermissions) {
+    ElasticsearchQuery(ElasticsearchClientService elasticsearchClientService, EsaPermissions esaPermissions, EsaUserRepository esaUserRepository) {
         this.elasticsearchClientService = elasticsearchClientService
         this.esaPermissions = esaPermissions
+        this.esaUserRepository = esaUserRepository
     }
 
     private XContentBuilder addField( fieldName,  value, XContentBuilder doc) {
@@ -40,81 +45,89 @@ class ElasticsearchQuery {
                 break
             case "apiToken":
                 break
+            case "from":
+                doc.field(fieldName, new BigDecimal(value.toString()))
+                break
+            case "size":
+                doc.field(fieldName, new BigDecimal(value.toString()))
+                break
             default:
                 doc.field(fieldName, value)
+
         }
         doc
     }
 
-    private XContentBuilder toXContentBuilder(String indexName, Map node) {
+    private XContentBuilder toXContentBuilder(String indexName, Map node, EsaPermissionConfiguration indexConfiguration) {
         XContentBuilder doc = XContentFactory.jsonBuilder().startObject()
-        node.each{ String key, value ->
-            if(key == "_source") {
-                value["include"] = applySourceFilters(indexName, value["include"])
-                if(value["include"].size() == 0) {
-                    value.remove("include")
+        if(node) {
+            node.each{ String key, value ->
+                switch(key) {
+                    case "user":
+                        break
+                    case "_source":
+                        value["includes"] = applySourceFilters(value["include"], indexConfiguration)
+                        if(value["includes"].size() == 0) {
+                            value.remove("includes")
+                            value["excludes"] = ["*"]
+                        }
+                        doc = addField(key, value, doc)
+                        break
+                    case "fields":
+                        value = applyFieldFilters(value, indexConfiguration)
+                        doc = addField(key, value, doc)
+                        break
+                    default:
+                        doc = addField(key, value, doc)
                 }
             }
-            if(value.size() > 0) {
-                doc = addField(key, value, doc)
-            }
+        } else {
+            doc  = addField("_source", [excludes: ["*"]], doc)
+            doc = addField("fields", [], doc)
         }
-
         doc.endObject()
         doc
     }
 
-    EsaSearchResponse send(String indexName, Map params) {
+    EsaSearchResponse send(String indexName, Map query) {
         EsaSearchResponse searchResponse = new EsaSearchResponse()
-        if(defaultAccessLevel(indexName)) {
-            searchResponse.unauthorized = Boolean.FALSE
-            searchResponse.body = elasticsearchClientService.query(indexName, toXContentBuilder(indexName, params))
+        List<String> roles = []
+        if(query.containsKey("user")) {
+            EsaUser esaUser = esaUserRepository.findByUsername(query.user)
+            roles = esaUser.roles
+        }
+        EsaPermissionConfiguration indexConfiguration = esaPermissions.where indexName: indexName, roles: roles
+        if(indexConfiguration.isAccessible()) {
+            XContentBuilder doc = toXContentBuilder(indexName, query, indexConfiguration)
+            searchResponse.body = elasticsearchClientService.executeDocument(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }
         searchResponse
     }
 
-    Boolean defaultAccessLevel(String indexName) {
-        Boolean accessLevel = Boolean.FALSE
-        if(esaPermissions.base.indices.containsKey(indexName)) {
-            switch(esaPermissions.base?.indices[indexName]["access"]) {
-                case "allow":
-                    accessLevel = Boolean.TRUE
-                    break
-                default:
-                    accessLevel = Boolean.FALSE
+    List<String> applySourceFilters(List<String> sourceFilters, EsaPermissionConfiguration indexConfiguration) {
+        List<String> result = []
+        if(indexConfiguration.sourceFilters?.size() > 0 && sourceFilters?.size() > 0) {
+            result = indexConfiguration.sourceFilters.findAll { String filter ->
+                sourceFilters.contains( filter?.tokenize(".")?.first() )
             }
         } else {
-            switch(esaPermissions.base.indices["_default"]["access"]) {
-                case "allow":
-                    accessLevel = Boolean.TRUE
-                    break
-                default:
-                    accessLevel = Boolean.FALSE
-            }
-        }
-
-        accessLevel
-    }
-
-    List<String> applySourceFilters(String indexName, List<String> sourceFilters) {
-        List<String> _sourceFilters = []
-        if(esaPermissions.base.indices.containsKey(indexName)) {
-            _sourceFilters << getSourceFilters(indexName)
-        } else {
-            _sourceFilters << getSourceFilters("_default")
-        }
-        def result = _sourceFilters.findAll{ String filter ->
-            sourceFilters.contains(filter?.tokenize(".")?.first())
+            result = sourceFilters
         }
         result.collect{ String res ->
-            res.tokenize(".").first()
+            res?.tokenize(".")?.first()
         }
     }
 
-    private List<String> getSourceFilters(String indexName) {
-        esaPermissions.base.indices[indexName]["source_filters"]
+    List<String> applyFieldFilters(List<String> fields, EsaPermissionConfiguration indexConfiguration) {
+        List<String> fieldsToFilterBy = []
+        if(indexConfiguration.fields?.size() > 0) {
+            fieldsToFilterBy = indexConfiguration.fields.findAll { String fieldFilter ->
+                fields.contains(fieldFilter)
+            }
+        }
+        fieldsToFilterBy
     }
 
 }

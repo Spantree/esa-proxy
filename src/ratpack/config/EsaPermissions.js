@@ -14,28 +14,25 @@
  * limitations under the License.
  */
 
+var base = {
+  indices: {
+      _default: [
+          {access: "allow",
+          fields: ["name"],
+          source_filters: ["directed_by"]
+      }],
+      locations: [{
+          access: "allow",
+          fields: ["about", "description", "name"],
+          source_filters: ["directed_by"],
+          roles: ["GUITAR", "DRUMMER"]
+      }]
+  }
+};
 
-@Grab(group="org.codehaus.groovy.modules.http-builder", module="http-builder", version="0.7")
-
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
-import static groovyx.net.http.ContentType.JSON
-
-
-def http = new HTTPBuilder("http://localhost:5051")
-
-def postBody = [name: "John Wayne"]
-
-http.request(Method.POST) {
-    uri.path = "/esa/auth/register"
-    requestContentType = JSON
-    body = postBody
-
-    response.success = { resp, reader ->
-        println "Created user: ${reader.user}"
-    }
-
-    response.error = { resp ->
-        println "Error: ${resp}"
-    }
-}
+var users = [
+    {username: "ringo", roles: ["DRUMMER"]},
+    {username: "george", roles: ["GUITAR", "VOCALS"]},
+    {username: "john", roles: ["GUITAR", "VOCALS"]},
+    {username: "paul", roles: ["BASS", "VOCALS"]}
+];

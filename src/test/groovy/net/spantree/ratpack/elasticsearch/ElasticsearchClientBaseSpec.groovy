@@ -16,21 +16,16 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import spock.lang.Ignore
 import spock.lang.Specification
 
-class ElasticsearchClientServiceSpec extends Specification {
-    ElasticsearchClientServiceImpl elasticsearchClientService
-    ElasticsearchConfig config
+@Ignore
+class ElasticsearchClientBaseSpec extends Specification {
+    ElasticsearchClientService elasticsearchClientService
 
     def setup() {
         File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
-        config = new ElasticsearchConfig(configFile)
+        def config = new ElasticsearchConfig(configFile)
         elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
-    }
-
-    def "Elasticsearch client succesfully starts up"() {
-        expect:
-        elasticsearchClientService.client.settings().asMap['cluster.name'] == config.props.cluster.name
-        elasticsearchClientService.client.settings().asMap['node.client'].toBoolean() == true
     }
 }

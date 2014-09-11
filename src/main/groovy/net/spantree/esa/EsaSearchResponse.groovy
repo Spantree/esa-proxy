@@ -20,9 +20,9 @@ import org.elasticsearch.action.search.SearchResponse
 
 /**
  * A value object that wraps the response from an Elasticsearch query.
- * We can check if the query sent was unauthorized by inspecting the
+ * We can check if the executeDocument sent was unauthorized by inspecting the
  * unauthorized field. If the request was authorized, the result of the
- * query will be saved in the body field.
+ * executeDocument will be saved in the body field.
  */
 class EsaSearchResponse {
     Boolean unauthorized

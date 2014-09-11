@@ -19,6 +19,7 @@ package net.spantree.ratpack.elasticsearch
 import com.google.inject.Inject
 import groovy.util.logging.Slf4j
 import org.elasticsearch.action.index.IndexRequestBuilder
+import org.elasticsearch.action.index.IndexResponse
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.client.Requests
 import org.elasticsearch.client.transport.TransportClient
@@ -82,12 +83,27 @@ class ElasticsearchClientServiceImpl implements ElasticsearchClientService {
         indexRequestBuilder.execute().actionGet().id
     }
 
-    SearchResponse query(String indexName, XContentBuilder doc) {
+    IndexResponse insert(String indexName, String docType, XContentBuilder doc) {
+        client.prepareIndex(indexName, docType).setSource(doc).execute().actionGet()
+    }
+
+
+    @Override
+    SearchResponse executeDocument(String indexName, XContentBuilder doc) {
         this.client
             .prepareSearch(indexName)
             .setSource(doc)
             .execute()
             .actionGet()
+    }
+
+    @Override
+    SearchResponse query(String indexName, XContentBuilder  doc) {
+        this.client
+                .prepareSearch(indexName)
+                .setQuery(doc)
+                .execute()
+                .actionGet()
     }
 
 }

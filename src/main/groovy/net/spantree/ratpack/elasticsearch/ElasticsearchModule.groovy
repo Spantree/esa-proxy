@@ -22,8 +22,11 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Scopes
 import net.spantree.esa.EsaPermissions
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 
 import javax.inject.Singleton
+import javax.script.ScriptEngine
+import javax.script.ScriptEngineManager
 
 /**
  * An Elasticsearch module that provides a way to create an index and populate types in that index.
@@ -32,14 +35,17 @@ import javax.inject.Singleton
 class ElasticsearchModule extends AbstractModule {
 
     private File cfg
+    private String esaPermissionsFileName
 
-    ElasticsearchModule(File cfg) {
+    ElasticsearchModule(File cfg, String esaPermissionsFileName) {
         this.cfg = cfg
+        this.esaPermissionsFileName = esaPermissionsFileName
     }
 
     @Override
     protected void configure() {
         bind(ElasticsearchQuery.class).in(Scopes.SINGLETON)
+        bind(EsaUserRepository.class).in(Scopes.SINGLETON)
     }
 
     @Provides
@@ -57,14 +63,12 @@ class ElasticsearchModule extends AbstractModule {
     @Provides
     @Singleton
     EsaPermissions provideEsaPermissions() {
+        ScriptEngineManager scriptEngineManager = new ScriptEngineManager()
+        ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("JavaScript")
+        scriptEngine.eval(new FileReader(esaPermissionsFileName))
         EsaPermissions esaPermissions = new EsaPermissions()
-        esaPermissions.base = [
-                indices: [
-                        _default: [
-                                access: "allow"
-                        ]
-                ]
-        ]
+        esaPermissions.base = scriptEngine.get("base")
+        esaPermissions.users = scriptEngine.get("users")
         esaPermissions
     }
 }

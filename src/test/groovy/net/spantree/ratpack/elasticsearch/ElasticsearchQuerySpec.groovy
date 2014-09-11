@@ -18,6 +18,7 @@ package net.spantree.ratpack.elasticsearch
 
 import net.spantree.esa.EsaPermissions
 import net.spantree.esa.EsaSearchResponse
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.search.internal.InternalSearchHit
 import spock.lang.Specification
@@ -25,29 +26,28 @@ import spock.lang.Specification
 class ElasticsearchQuerySpec extends Specification {
     ElasticsearchQuery elasticsearchQuery
     ElasticsearchClientService elasticsearchClientService
+    EsaUserRepository esaUserRepository
 
     def setup() {
-        File configFile = new File("src/ratpack/config", "EsSampleConfig.groovy")
+        File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
         def config = new ElasticsearchConfig(configFile)
         elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
         def basicPermissions = new EsaPermissions()
         basicPermissions.base = [
                 indices: [
-                        freebase: [
+                        freebase: [[
                             access: "allow"
-                        ]
+                        ]]
                 ]
         ]
-        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService, basicPermissions)
+        esaUserRepository = new EsaUserRepository(elasticsearchClientService)
+        elasticsearchQuery = new ElasticsearchQuery(elasticsearchClientService, basicPermissions, esaUserRepository)
     }
 
     def "should proxy request to elasticsearch"() {
         given:
         def params = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 aggs: [
                         genre: [
                                 terms: [ field: 'genre.facet' ]
@@ -83,14 +83,14 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        freebase: [
+                        freebase: [[
                                 access: "deny"
-                        ]
+                        ]]
                 ]
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
@@ -131,20 +131,20 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow"
-                        ]
+                        ]]
                 ]
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
+                fields: ['name', 'description'],
+                _source: [
+                        include: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
@@ -166,37 +166,31 @@ class ElasticsearchQuerySpec extends Specification {
 
         when:
         EsaSearchResponse searchResponse = esaQuery.send("freebase", queryParams)
+        def directedBy = searchResponse.body.hits.hits.findAll{ InternalSearchHit hit ->
+            hit.source && hit.source["directed_by"]
+        }
 
         then:
         !searchResponse.unauthorized
         searchResponse.body
+        directedBy.size() > 0
     }
 
     def "should not allow source_filters if they are not specified" () {
         given:
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
-                indices: [
-                        _default: [
-                                access: "allow",
-                                source_filters: [
-                                        "director.*"
-                                ]
-                        ]
-                ]
+                indices: [ _default: [[ access: "allow", source_filters: ["director.*"] ]] ]
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
-                fields: [
-                    returned: ['name', 'description'],
-                    searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 _source: [
-                    include: [ "directed_by" ]
+                    includes: [ "directed_by" ]
                 ],
                 aggs: [
                         genre: [
@@ -225,7 +219,6 @@ class ElasticsearchQuerySpec extends Specification {
         then:
         !searchResponse.unauthorized
         searchResponse.body.hits.hits.size() > 0
-        searchResponse.body.hits.hits*.source
         directedBy.size() == 0
 
     }
@@ -235,24 +228,21 @@ class ElasticsearchQuerySpec extends Specification {
         def esaPermissions = new EsaPermissions()
         esaPermissions.base = [
                 indices: [
-                        _default: [
+                        _default: [[
                                 access: "allow",
                                 source_filters: [
                                         "directed_by.*"
                                 ]
-                        ]
+                        ]]
                 ]
         ]
 
         and:
-        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions)
+        def esaQuery = new ElasticsearchQuery(elasticsearchClientService, esaPermissions, esaUserRepository)
 
         and:
         def queryParams = [
-                fields: [
-                        returned: ['name', 'description'],
-                        searched: ['name', 'description']
-                ],
+                fields: ['name', 'description'],
                 _source: [
                         include: [ "directed_by" ]
                 ],
