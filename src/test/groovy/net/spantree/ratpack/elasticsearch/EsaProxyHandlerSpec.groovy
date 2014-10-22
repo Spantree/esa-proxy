@@ -16,9 +16,12 @@
 
 package net.spantree.ratpack.elasticsearch
 
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import ratpack.groovy.test.LocalScriptApplicationUnderTest
-import ratpack.groovy.test.TestHttpClient
-import ratpack.groovy.test.TestHttpClients
+import ratpack.http.client.RequestSpec
+import ratpack.test.http.TestHttpClient
+import ratpack.test.http.TestHttpClients
 import ratpack.test.ApplicationUnderTest
 import spock.lang.Specification
 
@@ -26,44 +29,48 @@ class EsaProxyHandlerSpec extends Specification {
     ApplicationUnderTest aut = new LocalScriptApplicationUnderTest('other.remoteControl.enabled': 'true')
     @Delegate TestHttpClient client = TestHttpClients.testHttpClient(aut)
 
+
     def "lists ten items by default"() {
         when:
-        request.contentType("application/json")
-            .body([
-                fields: [
-                    returned: ['name', 'description'],
-                    searched: ['name', 'description']
-                ],
-                aggs: [
-                    genre: [
-                        terms: [ field: 'genre.facet' ]
-                    ],
-                    directed_by: [
-                        terms: [ field: 'directed_by.facet' ]
-                    ]
-                ],
-                highlight: [
-                    pre_tags: ['<mark>'],
-                    post_tags: ['</mark>'],
+        requestSpec {RequestSpec requestSpec ->
+            requestSpec.body.type("application/json")
+            requestSpec.body.text(JsonOutput.toJson([
                     fields: [
-                        name: [ number_of_fragments: 0 ],
-                        description: [ number_of_fragments: 0 ]
+                            returned: ['name', 'description'],
+                            searched: ['name', 'description']
+                    ],
+                    aggs: [
+                            genre: [
+                                    terms: [ field: 'genre.facet' ]
+                            ],
+                            directed_by: [
+                                    terms: [ field: 'directed_by.facet' ]
+                            ]
+                    ],
+                    highlight: [
+                            pre_tags: ['<mark>'],
+                            post_tags: ['</mark>'],
+                            fields: [
+                                    name: [ number_of_fragments: 0 ],
+                                    description: [ number_of_fragments: 0 ]
+                            ]
                     ]
-                ]
-            ])
+            ]))
+        }
+
         post("freebase/_search")
 
         then:
-        with(response.jsonPath()) {
-            getMap("hits").hits.size() == 10
-            !getBoolean("timed_out")
-            getInt("took") > 0
-            getMap("_shards").containsKey("failed")
-            getMap("_shards").containsKey("successful")
-            getMap("_shards").containsKey("total")
-            getMap("aggregations").directed_by.buckets.size() > 0
-            getMap("aggregations").genre.buckets.size() > 0
+        def hits = new JsonSlurper().parseText(response.body.text)
+        with(hits){
+            hits.hits.hits.size() == 10
+            !timed_out
+            took > 0
+            (_shards as Map).containsKey("failed")
+            (_shards as Map).containsKey("successful")
+            (_shards as Map).containsKey("total")
+            (aggregations as Map).directed_by.buckets.size() > 0
+            (aggregations as Map).genre.buckets.size() > 0
         }
     }
-
 }
