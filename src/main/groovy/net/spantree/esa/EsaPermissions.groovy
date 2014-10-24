@@ -23,7 +23,7 @@ package net.spantree.esa
  */
 class EsaPermissions {
     Map base
-    List<Map<String, List<String>>> users
+    List users
 
     /**
      * Queries for a configuration by index name and/or user role.
@@ -33,6 +33,7 @@ class EsaPermissions {
      */
     EsaPermissionConfiguration where(Map<String, String> query) {
         String indexName = getConfigIndexName(query.indexName)
+        println "got indexName: ${indexName}"
         getIndexConfiguration(indexName, query)
     }
 
@@ -51,6 +52,8 @@ class EsaPermissions {
     }
 
     private String getConfigIndexName(String indexName) {
+        println "base: ${base}"
+        println "users: ${users}"
         if(base.indices.containsKey(indexName)) {
             return indexName
         } else {
@@ -58,10 +61,15 @@ class EsaPermissions {
         }
     }
 
-    def getEntryWithoutRoles(String indexName) {
-        base.indices[indexName].find{ Map configEntry ->
+    Map getEntryWithoutRoles(String indexName) {
+        println "base indices: ${base.indices}"
+        println "with indexName: " + base.indices[indexName]
+        def res = base.indices[indexName].find{ Map configEntry ->
+            println "configEntry: ${configEntry}"
             !configEntry.containsKey("roles")
         }
+        println "entry without roles: ${res}"
+        res as Map
     }
 
     def getEntryWithRoles(String indexName, List<String> roles) {

@@ -1,7 +1,7 @@
 import net.spantree.esa.EsaPermissions
 import net.spantree.ratpack.elasticsearch.ElasticsearchClientService
-import net.spantree.ratpack.elasticsearch.EsaProxyHandler
 import net.spantree.ratpack.elasticsearch.ElasticsearchModule
+import net.spantree.ratpack.elasticsearch.EsaProxyHandler
 import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import ratpack.codahale.metrics.CodaHaleMetricsModule
 import ratpack.codahale.metrics.HealthCheckHandler

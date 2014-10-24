@@ -43,14 +43,20 @@ class EsaProxyHandler extends GroovyHandler {
                 post {
                     blocking {
                         Map node = parse Map
-                        if(!node)
+                        println "node: ${node}"
+                        if(!node) {
                             node = new JsonSlurper().parseText(request.body.text)
-                        elasticsearchQuery.send(context.pathTokens.indexName, node)
-                    } then { EsaSearchResponse resp ->
-                        if(resp.unauthorized) {
-                            response.status(401)
                         }
-                        context.render json(new JsonSlurper().parseText(resp.body.toString()))
+                        elasticsearchQuery.send(context.pathTokens.indexName, node)
+                    } onError {
+                        context.render json([message: "Something bad happened!"])
+                    } then { EsaSearchResponse resp ->
+                            if(resp.unauthorized) {
+                                response.status(401)
+                            }
+                            println "search body: ${resp}"
+                            context.render json(new JsonSlurper().parseText(resp.body.toString()))
+
                     }
                 }
             }

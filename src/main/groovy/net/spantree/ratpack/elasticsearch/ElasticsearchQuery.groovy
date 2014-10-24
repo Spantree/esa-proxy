@@ -96,13 +96,16 @@ class ElasticsearchQuery {
             EsaUser esaUser = esaUserRepository.findByUsername(query.user)
             roles = esaUser.roles
         }
+        println "indexName: ${indexName} roles: ${roles}"
         EsaPermissionConfiguration indexConfiguration = esaPermissions.where indexName: indexName, roles: roles
+        println "indexConfiguration: ${indexConfiguration}"
         if(indexConfiguration.isAccessible()) {
             XContentBuilder doc = toXContentBuilder(indexName, query, indexConfiguration)
             searchResponse.body = elasticsearchClientService.executeDocument(indexName, doc)
         } else {
             searchResponse.unauthorized = Boolean.TRUE
         }
+        println "searchResponse: ${searchResponse}"
         searchResponse
     }
 
