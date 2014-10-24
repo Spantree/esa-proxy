@@ -14,28 +14,18 @@
  * limitations under the License.
  */
 
+package net.spantree.ratpack.elasticsearch
 
-@Grab(group="org.codehaus.groovy.modules.http-builder", module="http-builder", version="0.7")
+import spock.lang.Ignore
+import spock.lang.Specification
 
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
-import static groovyx.net.http.ContentType.JSON
+@Ignore
+class ElasticsearchClientBaseSpec extends Specification {
+    ElasticsearchClientService elasticsearchClientService
 
-
-def http = new HTTPBuilder("http://localhost:5051")
-
-def postBody = [name: "John Wayne"]
-
-http.request(Method.POST) {
-    uri.path = "/esa/auth/register"
-    requestContentType = JSON
-    body = postBody
-
-    response.success = { resp, reader ->
-        println "Created user: ${reader.user}"
-    }
-
-    response.error = { resp ->
-        println "Error: ${resp}"
+    def setup() {
+        File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
+        def config = new ElasticsearchConfig(configFile)
+        elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
     }
 }

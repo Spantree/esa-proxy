@@ -18,23 +18,53 @@ package net.spantree.ratpack.elasticsearch
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import net.spantree.ratpack.elasticsearch.users.EsaUserRepository
 import ratpack.groovy.test.LocalScriptApplicationUnderTest
 import ratpack.http.client.RequestSpec
+import ratpack.test.ApplicationUnderTest
 import ratpack.test.http.TestHttpClient
 import ratpack.test.http.TestHttpClients
-import ratpack.test.ApplicationUnderTest
+import ratpack.test.remote.RemoteControl
 import spock.lang.Specification
 
 class EsaProxyHandlerSpec extends Specification {
     ApplicationUnderTest aut = new LocalScriptApplicationUnderTest('other.remoteControl.enabled': 'true')
-    @Delegate TestHttpClient client = TestHttpClients.testHttpClient(aut)
+    @Delegate
+    TestHttpClient client = TestHttpClients.testHttpClient(aut)
+    RemoteControl remote = new RemoteControl(aut)
 
+    def cleanup() {
+        remote.exec {
+            get(EsaUserRepository).deleteIndex()
+            true //We need to return a Serializable value.
+        }
+    }
+
+    def "test"() {
+        expect:
+        1 == 1
+    }
 
     def "lists ten items by default"() {
+        given:
+        def json = new JsonSlurper()
+
         when:
-        requestSpec {RequestSpec requestSpec ->
+        requestSpec{ RequestSpec requestSpec ->
             requestSpec.body.type("application/json")
             requestSpec.body.text(JsonOutput.toJson([
+                fields: ['name', 'description'],
+                aggs: [
+                    genre: [
+                        terms: [ field: 'genre.facet' ]
+                    ],
+                    directed_by: [
+                        terms: [ field: 'directed_by.facet' ]
+                    ]
+                ],
+                highlight: [
+                    pre_tags: ['<mark>'],
+                    post_tags: ['</mark>'],
                     fields: [
                             returned: ['name', 'description'],
                             searched: ['name', 'description']
@@ -55,13 +85,16 @@ class EsaProxyHandlerSpec extends Specification {
                                     description: [ number_of_fragments: 0 ]
                             ]
                     ]
+                ]
             ]))
         }
 
         post("freebase/_search")
 
         then:
+        println "bodyText: ${response.body}"
         def hits = new JsonSlurper().parseText(response.body.text)
+        println "hits: ${hits}"
         with(hits){
             hits.hits.hits.size() == 10
             !timed_out

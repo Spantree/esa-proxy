@@ -23,7 +23,7 @@ class ElasticsearchClientServiceSpec extends Specification {
     ElasticsearchConfig config
 
     def setup() {
-        File configFile = new File("src/ratpack/config", "EsSampleConfig.groovy")
+        File configFile = new File("src/ratpack/config", "EsaSampleConfig.groovy")
         config = new ElasticsearchConfig(configFile)
         elasticsearchClientService = new ElasticsearchClientServiceImpl(config)
     }

@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package net.spantree.ratpack.elasticsearch
+package net.spantree.ratpack.elasticsearch.users
 
-import org.elasticsearch.action.index.IndexResponse
-import org.elasticsearch.action.search.SearchResponse
-import org.elasticsearch.client.transport.TransportClient
-import org.elasticsearch.common.xcontent.XContentBuilder
+import groovy.transform.Immutable
 
-public interface ElasticsearchClientService {
-    SearchResponse executeDocument(String indexName, XContentBuilder doc)
-    SearchResponse query(String indexName, XContentBuilder doc)
-    TransportClient getClient()
-    IndexResponse insert(String indexName, String docType, XContentBuilder doc)
-    boolean indexExists(String indexname)
+@Immutable
+class EsaUser {
+    String username
+    List<String> roles
 }
